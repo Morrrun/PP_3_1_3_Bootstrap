@@ -10,17 +10,18 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import ru.kata.spring.boot_security.demo.model.User;
+import ru.kata.spring.boot_security.demo.service.user.UserService;
 import ru.kata.spring.boot_security.demo.service.user.UserServiceImpl;
 
 @Controller
 @RequestMapping("/user")
 public class UserController {
 
-    private final UserServiceImpl userServiceImpl;
+    private final UserService userService;
 
     @Autowired
     public UserController(UserServiceImpl userServiceImpl) {
-        this.userServiceImpl = userServiceImpl;
+        this.userService = userServiceImpl;
     }
 
 
@@ -29,8 +30,7 @@ public class UserController {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        User user = userServiceImpl.loadUserByEmail(userDetails.getUsername());
-
+        User user = userService.loadUserByEmail(userDetails.getUsername());
 
         model.addAttribute("user", user);
 

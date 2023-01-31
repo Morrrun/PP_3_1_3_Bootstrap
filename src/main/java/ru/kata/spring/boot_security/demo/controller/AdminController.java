@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -16,17 +15,19 @@ import ru.kata.spring.boot_security.demo.service.user.UserService;
 import ru.kata.spring.boot_security.demo.service.user.UserServiceImpl;
 
 import javax.validation.Valid;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Controller
 @RequestMapping("/admin")
 public class AdminController {
-    private final PasswordEncoder passwordEncoder;
     private final UserService userService;
     private final RoleService roleService;
 
     @Autowired
-    public AdminController(PasswordEncoder passwordEncoder, UserServiceImpl userService, RoleServiceImpl roleService) {
-        this.passwordEncoder = passwordEncoder;
+    public AdminController(UserServiceImpl userService, RoleServiceImpl roleService) {
         this.userService = userService;
         this.roleService = roleService;
     }
@@ -41,8 +42,11 @@ public class AdminController {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         User user = userService.loadUserByEmail(userDetails.getUsername());
 
+        Set<Role> allRole = roleService.findAll();
+
         model.addAttribute("users", userService.getAllUsers());
         model.addAttribute("user", user);
+        model.addAttribute("roles", allRole);
 
         return "/admin";
     }
@@ -51,6 +55,7 @@ public class AdminController {
     public String addUser(@ModelAttribute
                           @Valid User user,
                           @RequestParam(value = "role", required = false) String userRole) {
+
         Role role = roleService.findByRole(userRole);
         role.addUserToRole(user);
 
@@ -62,30 +67,11 @@ public class AdminController {
     @PatchMapping("/")
     public String saveUser(@ModelAttribute
                            @Valid User user,
-                           @RequestParam(value = "role", required = false) String userRole) {
+                           @ModelAttribute("rolesForUser") Set<Role> roles) {
 
-        //Получаю пользователя для дальнейшего сравнения
-        User userWithRole = userService.getUser(user.getId());
-        Role role = roleService.findByRole(userRole);
-
-        //Производим проверку на наличие роли
-        if (!userWithRole.getRoles().contains(role)) {
-            role.addUserToRole(user);
-
-        //Проверяю выбор из селектора на наличие роли Админа для последующей установки соответсвующих прав
-        } else if (!role.getRole().equals("ADMIN")) {
-            Role roleAdmin = roleService.findByRole("ADMIN");
-            userWithRole.getRoles().remove(roleAdmin);
-        }
-        user.setRoles(userWithRole.getRoles());
-
-        //Производим проверку на наличие изменений в пароле
-        if (!user.getPassword().isEmpty()) {
-            if (!userWithRole.getPassword().equals(user.getPassword())) {
-                user.setPassword(passwordEncoder.encode(user.getPassword()));
-            }
-        } else {
-            user.setPassword(userWithRole.getPassword());
+        //Устанавливыаю роли
+        for (Role role : roles) {
+            user.addRoleToUser(role);
         }
 
         userService.updateUser(user);

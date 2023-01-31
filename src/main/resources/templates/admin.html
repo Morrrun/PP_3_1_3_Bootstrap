@@ -230,19 +230,15 @@
                                                                         </div>
 
                                                                         <div class="mb-3">
-                                                                            <label for="role" class="form-label fw-bold">
+                                                                            <label for="rolesForUser" class="form-label fw-bold">
                                                                                 Роль</label>
-                                                                            <select multiple class="form-control"
-                                                                                    name="role" id="role"
+                                                                            <select class="form-control"
+                                                                                    name="rolesForUser" id="rolesForUser"
                                                                                     required="required"
-                                                                                    size="2">
-                                                                                <option value="ADMIN"
-                                                                                        style="width: 310px;">
-                                                                                    ADMIN
-                                                                                </option>
-                                                                                <option value="USER"
-                                                                                        style="width: 310px;">
-                                                                                    USER
+                                                                                    multiple size="2" >
+                                                                                <option th:each="role : ${roles}"
+                                                                                        th:value="${role.id}"
+                                                                                        th:text="${role.role}">
                                                                                 </option>
                                                                             </select>
                                                                         </div>
